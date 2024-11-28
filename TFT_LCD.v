@@ -102,6 +102,21 @@ module tft_lcd(
             B = 8'b0;
         end
         else begin
+            if (counter_v<42 || 482<counter_v || counter_h<410 || 850<counter_h)begin // background
+                R = 8'd0;
+                G = 8'd255;
+                B = 8'd0;
+            end
+            else if((counter_v-42)%40 == 0 || (counter_h-410)%40 == 0) begin // black line
+                R = 8'h00;
+                G = 8'h00;
+                B = 8'h00;
+            end  
+            else if(42<=counter_v && counter_v<=482 && 410<=counter_h && counter_h<=850) begin // wood_board
+                R = 8'hCD;
+                G = 8'h85;
+                B = 8'h3F;
+            end
             for (k=0;k<(map_size-1)*(map_size-1);k=k+1) begin  // display stone
                 if (board_state[k]==1'b1) begin
                     row = k/(map_size-1);
@@ -117,21 +132,6 @@ module tft_lcd(
                     end                            
                 end
             end
-            if (counter_v<42 || 482<counter_v || counter_h<410 || 850<counter_h)begin // background
-                R = 8'd0;
-                G = 8'd255;
-                B = 8'd0;
-            end
-            else if(42<=counter_v && counter_v<=482 && 410<=counter_h && counter_h<=850) begin // wood_board
-                R = 8'hCD;
-                G = 8'h85;
-                B = 8'h3F;
-            end
-            else if((counter_v-42)%40 == 0 || (counter_h-410)%40 == 0) begin // black line
-                R = 8'h00;
-                G = 8'h00;
-                B = 8'h00;
-            end  
         end
     end
 endmodule
