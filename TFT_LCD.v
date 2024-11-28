@@ -1,7 +1,6 @@
 parameter HSIZE = 11;
 parameter VSIZE = 10;
 parameter map_size = 11;
-parameter map_v_size = 60;
 
 module TFT_LCD_controller(
     input clk, rst,
@@ -57,6 +56,17 @@ module TFT_LCD_controller(
     end
 endmodule
 
+module wood_board(board_state);
+    parameter map_size = 11;
+    output reg [(map_size-1)*(map_size-1)-1:0] board_state;
+    initial begin
+        board_state = 'b0;
+        board_state[9] = 1'b1;
+        board_state[25] = 1'b1;
+        board_state[50] = 1'b1;
+    end
+endmodule
+
 module tft_lcd(
     input clk, rst,
     output reg [8-1:0] R, G, B,
@@ -65,11 +75,14 @@ module tft_lcd(
     );
     wire [11-1:0] counter_h;
     wire [10-1:0] counter_v;
-    wire [map_size*map_size-1:0] board_state;
-    wire [9:0] row, col;
+    wire [(map_size-1)*(map_size-1)-1:0] board_state;
+    reg [9:0] row, col, x_min, x_max, row_max;
+    reg [8*20*2-1:0] stone_range;
     integer i;
-
-//    wood_board(.board_state(board_state));
+    integer k;
+    integer r;
+    
+    wood_board(.board_state(board_state));
     
     TFT_LCD_controller ctl(
         .clk(clk), .rst(rst),
@@ -77,31 +90,48 @@ module tft_lcd(
         .disp_den(den), .disp_hsync(hsync), .disp_vsync(vsync),
         .disp_clk(dclk), .disp_enb(disp_en)
     );
+    initial begin
+        stone_range = 320'h05080a0c0d0e0f10111212131313141414141414141414141414131313121211100f0e0d0c0a0805;
+        row_max = 20;
+    end
+    
     always @ (posedge rst or posedge clk) begin
-        if (rst) begin
+        if (rst) begin // background
             R = 8'b0;
             G = 8'b0;
             B = 8'b0;
         end
         else begin
-            for(i=0;i<map_size;i=i+1) begin
-                if(42+40*i<=counter_v && counter_v<=42+40*(i+1) && 410<=counter_h && counter_h<=850) begin
-                    R = 8'hCD;
-                    G = 8'h85;
-                    B = 8'h3F;
-                    if((counter_v-42)%40 == 0 || (counter_h-410)%40 == 0) begin
-                        R = 8'h00;
-                        G = 8'h00;
-                        B = 8'h00;
-                    end
+            for (k=0;k<(map_size-1)*(map_size-1);k=k+1) begin  // display stone
+                if (board_state[k]==1'b1) begin
+                    row = k/(map_size-1);
+                    col = k%(map_size-1);
+                    for(r=0;r<40;r=r+1) begin
+                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
+                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
+                            R = 8'hFF;
+                            G = 8'hFF;
+                            B = 8'hFF;
+                        end
+                    end                            
                 end
             end
-            
-            if (counter_v<42 || 482<counter_v || counter_h<410 || 850<counter_h)begin
+            if (counter_v<42 || 482<counter_v || counter_h<410 || 850<counter_h)begin // background
                 R = 8'd0;
                 G = 8'd255;
                 B = 8'd0;
             end
-        end   
+            else if(42<=counter_v && counter_v<=482 && 410<=counter_h && counter_h<=850) begin // wood_board
+                R = 8'hCD;
+                G = 8'h85;
+                B = 8'h3F;
+            end
+            else if((counter_v-42)%40 == 0 || (counter_h-410)%40 == 0) begin // black line
+                R = 8'h00;
+                G = 8'h00;
+                B = 8'h00;
+            end  
+        end
     end
 endmodule
