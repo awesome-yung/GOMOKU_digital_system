@@ -70,8 +70,6 @@ module tft_lcd(
     integer k;
     integer r;
     
-    wood_board(.board_state(board_state));
-    
     TFT_LCD_controller ctl(
         .clk(clk), .rst(rst),
         .counter_h(counter_h), .counter_v(counter_v),
@@ -152,7 +150,7 @@ endmodule
 module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en);
     parameter map_size = 11;
     input put, rst, undo, clk;
-    input [3:0] left, right, up, down;
+    input left, right, up, down;
     output [8-1:0] R, G, B;
     output den, hsync, vsync, dclk, disp_en;
     reg [7:0] Current_pos;
