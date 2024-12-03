@@ -58,7 +58,7 @@ endmodule
 
 module tft_lcd(
     input clk, rst,
-    input [(map_size-1)*(map_size-1)-1:0] board_state,
+    input [(map_size-1)*(map_size-1)-1:0] board_state, turn_map,
     output reg [8-1:0] R, G, B,
     output den, hsync, vsync,
     output dclk, disp_en
@@ -104,7 +104,7 @@ module tft_lcd(
                 B = 8'h3F;
             end
             for (k=0;k<(map_size-1)*(map_size-1);k=k+1) begin  // display stone
-                if (board_state[k]==1'b1) begin
+                if (board_state[k]==1'b1 && turn_map[k]==1) begin
                     row = k/(map_size-1);
                     col = k%(map_size-1);
                     for(r=0;r<40;r=r+1) begin
@@ -117,34 +117,70 @@ module tft_lcd(
                         end
                     end                            
                 end
+                else if (board_state[k]==1'b1 && turn_map[k]==0) begin
+                    row = k/(map_size-1);
+                    col = k%(map_size-1);
+                    for(r=0;r<40;r=r+1) begin
+                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
+                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
+                            R <= 8'h00;
+                            G <= 8'h00;
+                            B <= 8'h00;
+                        end
+                    end
+                end
             end
         end
     end
 endmodule
 
-
-module wood_board(clk, Current_pos, put, rst, board_state);
+module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
     parameter map_size = 11;
     input clk;
     input [7:0] Current_pos;
     input put,rst;
-    reg [(map_size-1)*(map_size-1)-1:0] pos_bit;
     reg put_prev;
-    output reg [(map_size-1)*(map_size-1)-1:0] board_state;
+    reg [7:0] turn;
+    reg [(map_size-1)*(map_size-1)-1:0] pos_bit;
+    reg [(map_size-1)*(map_size-1)-1:0] board_state_mem;
+    reg [(map_size-1)*(map_size-1)-1:0] turn_map_mem;
+    output [(map_size-1)*(map_size-1)-1:0] board_state;
+    output [(map_size-1)*(map_size-1)-1:0] turn_map;
+    
+    assign board_state = board_state_mem;
+    assign turn_map = turn_map_mem;
     
     initial begin
-        board_state = 'b0;
+        board_state_mem = 'b0;
+        turn_map_mem = 'b0;
+        turn = 0;
     end
+    
+    always @(posedge clk) begin
+            put_prev <= put;
+    end
+
     always @(posedge clk)begin
         pos_bit = 100'b0;
-        if(put==1) begin
-            pos_bit = 1'b1 << Current_pos;
+        if(put==1'b1 && put_prev==1'b0 && board_state_mem[Current_pos]==1'b0) begin
+            pos_bit[Current_pos] = 1'b1;
+            turn = turn + 1;
+            if (turn%2==8'b0)begin
+                turn_map_mem[Current_pos] <= 1;
+            end
+            else begin
+                turn_map_mem[Current_pos] <= 0;
+            end
         end
-        board_state = board_state | pos_bit;
+        board_state_mem <= board_state_mem | pos_bit;
         if(rst==1)begin
-            board_state = 'b0;
+            board_state_mem <= 'b0;
+            turn_map_mem <= 'b0;
+            turn = 0;
         end
     end
+    
 endmodule
 
 module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en);
@@ -156,9 +192,10 @@ module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsy
     reg [7:0] Current_pos;
     reg right_prev, left_prev, up_prev, down_prev;
     wire [(map_size-1)*(map_size-1)-1:0] board_state;
+    wire [(map_size-1)*(map_size-1)-1:0] turn_map;
     
-    wood_board board(clk, Current_pos, put, rst, board_state);
-    tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
+    wood_board board(.clk(clk), .Current_pos(Current_pos), .put(put), .rst(rst), .board_state(board_state), .turn_map(turn_map));
+    tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .turn_map(turn_map), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
     
     initial begin
         Current_pos = 8'd44;
