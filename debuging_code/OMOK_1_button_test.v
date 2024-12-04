@@ -1,89 +1,3 @@
-module keypad_RLUD(clk, rst, key_col, state_move);
-    input clk, rst;
-    input [3-1:0] key_col;  // 5:up, 7:left, 8:put, 9:right, *:undo, 0:down
-    output reg [2:0] state_move;
-    wire [4-1:0] key_value;
-    keypad key(
-        .clk(clk), .rst(rst),
-        .key_col(key_col),
-        .key_value(key_value)
-        );
-        always @ (posedge clk) begin
-            case (key_value)
-                4'h5: state_move <= 3'd0; // up
-                4'h7: state_move <= 3'd1; // left
-                4'h8: state_move <= 3'd2; // put
-                4'h9: state_move <= 3'd3; // right
-                                          // undo
-                4'h0: state_move <= 3'd5; // down
-                4'hf: state_move <= 3'd6; //keypad_reset
-            endcase
-        end
-endmodule
-
-module keypad(clk, rst, key_col, key_value);
-    input clk, rst;
-    input [3-1:0] key_col;
-    output reg [4-1:0] key_value;
-    reg [2-1:0] key_counter;
-    reg [4-1:0] key_row;
-    
-    always @ (posedge clk) begin
-        if (rst) key_counter = 2'b00;
-        else key_counter = key_counter + 2'd1;
-    end
-
-    always @ (posedge clk) begin
-        if (rst) key_row = 4'b0000;
-        else begin
-            case (key_counter)
-                2'b00: key_row = 4'b1000;
-                2'b01: key_row = 4'b0100;
-                2'b10: key_row = 4'b0010;
-                2'b11: key_row = 4'b0001;
-            endcase
-        end
-    end
-    
-    always @ (posedge clk) begin
-        if (rst) key_value = 4'hf;
-        else
-            case (key_row)
-                4'b1000:
-                case (key_col)
-                    3'b100: key_value = 4'h1;
-                    3'b010: key_value = 4'h2;
-                    3'b001: key_value = 4'h3;
-                    default: key_value = 4'hf;
-                endcase
-                // Design your code!
-                4'b0100:
-                case (key_col)
-                    3'b100: key_value = 4'h4;
-                    3'b010: key_value = 4'h5;
-                    3'b001: key_value = 4'h6;
-                    default: key_value = 4'hf;
-                endcase
-                
-                4'b0010:
-                case (key_col)
-                    3'b100: key_value = 4'h7;
-                    3'b010: key_value = 4'h8;
-                    3'b001: key_value = 4'h9;
-                    default: key_value = 4'hf;
-                endcase
-                
-                4'b0001:
-                case (key_col)
-                    3'b100: key_value = 4'hc;
-                    3'b010: key_value = 4'h0;
-                    3'b001: key_value = 4'hd;
-                    default: key_value = 4'hf;
-                endcase
-            endcase
-        end
-endmodule
-
 module TFT_LCD_controller(clk, rst, counter_h, counter_v, disp_den, disp_hsync, disp_vsync, disp_clk, disp_enb);
     parameter HSIZE = 11;
     parameter VSIZE = 10;
@@ -267,32 +181,27 @@ module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
     
 endmodule
 
-module OMOK(rst, clk, key_col, R, G, B, den, hsync, vsync, dclk, disp_en);
+module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en, test_out, test_pos);
     parameter map_size = 11;
-    input rst, clk;
-    input [2:0] key_col;
+    input put, rst, undo, clk;
+    input left, right, up, down;
     output [8-1:0] R, G, B;
     output den, hsync, vsync, dclk, disp_en;
+    output [(map_size-1)*(map_size-1)-1:0] test_out;
+    output [7:0] test_pos;
     reg [7:0] Current_pos;
     reg right_prev, left_prev, up_prev, down_prev;
-    reg left, right, up, down, put, undo;
-    reg [2:0] state_move_reg;
     wire [(map_size-1)*(map_size-1)-1:0] board_state;
     wire [(map_size-1)*(map_size-1)-1:0] turn_map;
-    wire [2:0] state_move;
     
     wood_board board(.clk(clk), .Current_pos(Current_pos), .put(put), .rst(rst), .board_state(board_state), .turn_map(turn_map));
     tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .turn_map(turn_map), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
-    keypad_RLUD dirc(.clk(clk), .rst(rst), .key_col(key_col), .state_move(state_move));
-//    assign state_move_reg = state_move;
+    
+    assign test_out = board_state;
+    assign test_pos = Current_pos;
     
     initial begin
-        Current_pos = 8'd44;
-        up = 0;
-        left = 0;
-        put = 0;
-        right = 0;
-        down = 0;
+        Current_pos = 8'd45;
     end
     
     always @(posedge clk or posedge rst) begin
@@ -311,22 +220,6 @@ module OMOK(rst, clk, key_col, R, G, B, den, hsync, vsync, dclk, disp_en);
     end
     
     always @(posedge clk) begin
-        state_move_reg <= state_move;
-        case(state_move_reg)
-            3'd0: up <= 1;
-            3'd1: left <= 1;
-            3'd2: put <= 1;
-            3'd3: right <= 1;
-            3'd5: down <= 1;
-            3'd6: begin 
-                    up <= 0; 
-                    left <= 0; 
-                    put <= 0;
-                    right <= 0;
-                    down <= 0;
-                end
-        endcase
-        
         if(right == 1'b1 && right_prev == 1'b0 && Current_pos % (map_size-1) != 9) begin
             Current_pos = Current_pos + 8'd1;
         end
