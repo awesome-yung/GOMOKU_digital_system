@@ -1,14 +1,9 @@
-parameter HSIZE = 11;
-parameter VSIZE = 10;
-parameter map_size = 11;
-
-module keypad_RLUD(
-        input clk, rst,
-        input [3-1:0] key_col,  // 5:up, 7:left, 8:put, 9:right, *:undo, 0:down
-        output reg [2:0] state_move
-        );
-wire [4-1:0] key_value;
-keypad key(
+module keypad_RLUD(clk, rst, key_col, state_move);
+    input clk, rst;
+    input [3-1:0] key_col;  // 5:up, 7:left, 8:put, 9:right, *:undo, 0:down
+    output reg [2:0] state_move;
+    wire [4-1:0] key_value;
+    keypad key(
         .clk(clk), .rst(rst),
         .key_col(key_col),
         .key_value(key_value)
@@ -26,11 +21,10 @@ keypad key(
         end
 endmodule
 
-module keypad(
-            input clk, rst,
-            input [3-1:0] key_col,
-            output reg [4-1:0] key_value
-            );
+module keypad(clk, rst, key_col, key_value);
+    input clk, rst;
+    input [3-1:0] key_col;
+    output reg [4-1:0] key_value;
     reg [2-1:0] key_counter;
     reg [4-1:0] key_row;
     
@@ -90,14 +84,15 @@ module keypad(
         end
 endmodule
 
-
-module TFT_LCD_controller(
-    input clk, rst,
-    output reg [HSIZE-1:0] counter_h,
-    output reg [VSIZE-1:0] counter_v,
-    output reg disp_den, disp_hsync, disp_vsync,
-    output disp_clk, disp_enb
-    );
+module TFT_LCD_controller(clk, rst, counter_h, counter_v, disp_den, disp_hsync, disp_vsync, disp_clk, disp_enb);
+    parameter HSIZE = 11;
+    parameter VSIZE = 10;
+    input clk, rst;
+    output reg [HSIZE-1:0] counter_h;
+    output reg [VSIZE-1:0] counter_v;
+    output reg disp_den, disp_hsync, disp_vsync;
+    output disp_clk, disp_enb;
+    
     reg video_on_h, video_on_v;
     assign disp_clk = clk;
     assign disp_enb = 1'b1;
@@ -145,13 +140,13 @@ module TFT_LCD_controller(
     end
 endmodule
 
-module tft_lcd(
-    input clk, rst,
-    input [(map_size-1)*(map_size-1)-1:0] board_state, turn_map,
-    output reg [8-1:0] R, G, B,
-    output den, hsync, vsync,
-    output dclk, disp_en
-    );
+module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk, disp_en);
+    parameter map_size = 11;
+    input clk, rst;
+    input [(map_size-1)*(map_size-1)-1:0] board_state, turn_map;
+    output reg [8-1:0] R, G, B;
+    output den, hsync, vsync;
+    output dclk, disp_en;
     wire [11-1:0] counter_h;
     wire [10-1:0] counter_v;
     reg [9:0] row, col, x_min, x_max, row_max;
