@@ -133,6 +133,53 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
     end
 endmodule
 
+module game_logic(Current_pos, rst, turn, board_state, game_over);
+    parameter map_size = 11;
+    input [7:0] Current_pos;
+    input rst;
+    input turn;
+    input [(map_size-1)*(map_size-1)-1:0] board_state;
+    output reg game_over;
+
+    reg [3:0] count_row, count_col, count_diag1, count_diag2;
+
+    task check_line_winning(
+        input [(map_size-1)*(map_size-1)-1:0] state, 
+        input integer start_pos, 
+        input integer delta, // Direction increment (e.g., +1 for horizontal, +map_size for vertical)
+        input integer turn_value,
+        output reg [3:0] count
+    );
+        integer i, current_pos;
+        begin
+            count = 0;
+            for (i = -4; i <= 4; i = i + 1) begin
+                current_pos = start_pos + i * delta;
+                // Boundary check
+                if (current_pos >= 0 && current_pos < (map_size-1)*(map_size-1)) begin
+                    if (state[current_pos] == turn_value) count = count + 1;
+                    else count = 0;
+                    // Winning condition
+                    if (count == 5) begin
+                        game_over = 1'b1;
+                        disable check_line_winning; // Exit task on win
+                    end
+                end
+            end
+        end
+    endtask
+
+    always @(*) begin
+        game_over = 1'b0; // Reset game over flag
+
+        // Check for horizontal, vertical, and diagonal wins
+        check_line_winning(board_state, Current_pos, 1, turn, count_row); // Horizontal
+        check_line_winning(board_state, Current_pos, map_size - 1, turn, count_col); // Vertical
+        check_line_winning(board_state, Current_pos, map_size, turn, count_diag1); // Diagonal (\)
+        check_line_winning(board_state, Current_pos, map_size - 2, turn, count_diag2); // Diagonal (/)
+    end
+endmodule
+
 module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
     parameter map_size = 11;
     input clk;
@@ -143,14 +190,21 @@ module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
     reg [(map_size-1)*(map_size-1)-1:0] pos_bit;
     reg [(map_size-1)*(map_size-1)-1:0] board_state_mem;
     reg [(map_size-1)*(map_size-1)-1:0] turn_map_mem;
+    reg game_over;
+
     output [(map_size-1)*(map_size-1)-1:0] board_state;
     output [(map_size-1)*(map_size-1)-1:0] turn_map;
 
-    reg [3:0] count_row, count_col, count_diag1, count_diag2;
-    reg game_over;
-
     assign board_state = board_state_mem;
     assign turn_map = turn_map_mem;
+
+    game_logic logic(
+    .Current_pos(Current_pos), 
+    .rst(rst), 
+    .turn(turn % 2), 
+    .board_state(board_state_mem), 
+    .game_over(game_over)
+    );
 
     initial begin
         board_state_mem = 'b0;
@@ -161,34 +215,6 @@ module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
 
     always @(posedge clk) begin
         put_prev <= put;
-    end
-    
-    task check_line_winning(
-        input [(map_size-1)*(map_size-1)-1:0] state, 
-        input integer start_pos, 
-        input integer delta, // 방향 변화량 (e.g., +1 for horizontal, +map_size for vertical)
-        input integer turn,
-        output integer count
-    );
-        integer i, current_pos;
-        begin
-            count = 0;
-            for (i = -4; i <= 4; i = i + 1) begin
-                current_pos = start_pos + i * delta;
-                if (current_pos >= 0 && current_pos < (map_size-1)*(map_size-1)) begin
-                    if (state[current_pos] == turn) count = count + 1;
-                    else count = 0;
-                    if (count == 5) begin
-                        game_over = 1'b1;
-                        disable check_line_winning; // 승리 조건을 만족하면 종료
-                    end
-                end
-            end
-        end
-    endtask
-
-    always @(posedge clk) begin
-            put_prev <= put;
     end
 
     always @(posedge clk) begin
@@ -203,11 +229,6 @@ module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
                 turn_map_mem[Current_pos] <= 0;
             end
         end
-
-        check_line_winning(board_state, Current_pos, 1, turn%2, count_row); // Horizontal
-        check_line_winning(board_state, Current_pos, map_size - 1, turn%2, count_col); // Vertical
-        check_line_winning(board_state, Current_pos, map_size, turn%2, count_diag1); // Diagonal (\)
-        check_line_winning(board_state, Current_pos, map_size - 2, turn%2, count_diag2); // Diagonal (/)
 
         if (game_over == 1) begin
             board_state_mem <= 'b0;
@@ -241,7 +262,7 @@ module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsy
     tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .turn_map(turn_map), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
     
     initial begin
-        Current_pos = 8'd45;
+        Current_pos = 8'd44;
     end
     
     always @(posedge clk or posedge rst) begin
