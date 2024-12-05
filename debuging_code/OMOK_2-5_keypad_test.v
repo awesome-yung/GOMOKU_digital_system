@@ -34,10 +34,10 @@ module JK_FF(clk, J, K, Q, not_Q);
     
     D_FF D0(~clk, w3, Q, not_Q);
     
-    initial begin
-        serve_J = 0;
-        serve_K = 1;
-    end
+//    initial begin
+//        serve_J = 0;
+//        serve_K = 1;
+//    end
     
     always @ (posedge clk) begin
         serve_J = J;
@@ -45,14 +45,15 @@ module JK_FF(clk, J, K, Q, not_Q);
     end
 endmodule
 
-module keypad_RLUD(clk, rst, key_col, state_move, key_row, key_value_test);
+//module keypad_RLUD(clk, rst, key_col, state_move, key_row, key_value_test);
+module keypad_RLUD(clk, rst, key_col, state_move, key_row);
     input clk, rst;
     input [3-1:0] key_col;  // 5:up, 7:left, 8:put, 9:right, *:undo, 0:down
     output reg [2:0] state_move;
     output [4-1:0] key_row;
-    output [4-1:0] key_value_test;
+//    output [4-1:0] key_value_test;
     wire [4-1:0] key_value;
-    assign key_value_test = key_value;
+//    assign key_value_test = key_value;
     keypad key(
         .clk(clk), .rst(rst),
         .key_col(key_col),
@@ -218,37 +219,37 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
     
     always @ (posedge rst or posedge clk) begin
         if (rst) begin // background
-            R = 8'b0;
-            G = 8'b0;
-            B = 8'b0;
+            R <= 8'b0;
+            G <= 8'b0;
+            B <= 8'b0;
         end
         else begin
             if (counter_v<42 || 482<counter_v || counter_h<410 || 850<counter_h)begin // background
-                R = 8'd0;
-                G = 8'd255;
-                B = 8'd0;
+                R <= 8'd0;
+                G <= 8'd255;
+                B <= 8'd0;
             end
             else if((counter_v-42)%40 == 0 || (counter_h-410)%40 == 0) begin // black line
-                R = 8'h00;
-                G = 8'h00;
-                B = 8'h00;
+                R <= 8'h00;
+                G <= 8'h00;
+                B <= 8'h00;
             end  
             else if(42<=counter_v && counter_v<=482 && 410<=counter_h && counter_h<=850) begin // wood_board
-                R = 8'hCD;
-                G = 8'h85;
-                B = 8'h3F;
+                R <= 8'hCD;
+                G <= 8'h85;
+                B <= 8'h3F;
             end
             for (k=0;k<(map_size-1)*(map_size-1);k=k+1) begin  // display stone
                 if (board_state[k]==1'b1 && turn_map[k]==1) begin
-                    row = k/(map_size-1);
-                    col = k%(map_size-1);
+                    row <= k/(map_size-1);
+                    col <= k%(map_size-1);
                     for(r=0;r<40;r=r+1) begin
-                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
-                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        x_min <= 410 + 40 + col*40 - stone_range[r*8+:8];
+                        x_max <= 410 + 40 + col*40 + stone_range[r*8+:8];
                         if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
-                            R = 8'hFF;
-                            G = 8'hFF;
-                            B = 8'hFF;
+                            R <= 8'hFF;
+                            G <= 8'hFF;
+                            B <= 8'hFF;
                         end
                     end                            
                 end
@@ -256,8 +257,8 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
                     row = k/(map_size-1);
                     col = k%(map_size-1);
                     for(r=0;r<40;r=r+1) begin
-                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
-                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        x_min <= 410 + 40 + col*40 - stone_range[r*8+:8];
+                        x_max <= 410 + 40 + col*40 + stone_range[r*8+:8];
                         if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
                             R <= 8'h00;
                             G <= 8'h00;
@@ -326,34 +327,23 @@ module OMOK(rst, clk, key_col, R, G, B, den, hsync, vsync, dclk, disp_en, key_ro
     output [8-1:0] R, G, B;
     output den, hsync, vsync, dclk, disp_en;
     output [3:0] key_row;
-//    output [(map_size-1)*(map_size-1)-1:0] test_out;
-//    output [7:0] test_pos;
-//    output [7:0] test_rlud;
     reg [7:0] Current_pos;
-//    reg right_prev, left_prev, up_prev, down_prev, right_edge, left_edge, up_edge, down_edge;
     reg set_reset;
     wire [3:0] key_hold ;
     reg left, right, up, down, put, undo;
     reg [2:0] state_move_reg;
-    wire Q_out;
+    wire [3:0] Q_out;
     wire [(map_size-1)*(map_size-1)-1:0] board_state;
     wire [(map_size-1)*(map_size-1)-1:0] turn_map;
     wire [2:0] state_move;
-//    output [4-1:0] key_value_test;
     
     wood_board board(.clk(clk), .Current_pos(Current_pos), .put(put), .rst(rst), .board_state(board_state), .turn_map(turn_map));
     tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .turn_map(turn_map), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
-//    keypad_RLUD dirc(.clk(clk), .rst(rst), .key_col(key_col), .state_move(state_move), .key_row(key_row), .key_value_test(key_value_test));
     keypad_RLUD dirc(.clk(clk), .rst(rst), .key_col(key_col), .state_move(state_move), .key_row(key_row));
-    JK_FF hold_up(.clk(clk), .J(up), .K(set_reset), .Q(key_hold[0]), .not_Q(Q_out));
-    JK_FF hold_left(.clk(clk), .J(left), .K(set_reset), .Q(key_hold[1]), .not_Q(Q_out));
-    JK_FF hold_right(.clk(clk), .J(right), .K(set_reset), .Q(key_hold[2]), .not_Q(Q_out));
-    JK_FF hold_down(.clk(clk), .J(down), .K(set_reset), .Q(key_hold[3]), .not_Q(Q_out));
-    
-//(clk, J, K, Q, not_Q);    
-//    assign test_out = board_state;
-//    assign test_pos = Current_pos;
-//    assign test_rlud = {left, right, up, down, left_prev, right_prev, up_prev, down_prev};
+    JK_FF hold_up(.clk(clk), .J(up), .K(set_reset), .Q(key_hold[0]), .not_Q(Q_out[0]));
+    JK_FF hold_left(.clk(clk), .J(left), .K(set_reset), .Q(key_hold[1]), .not_Q(Q_out[1]));
+    JK_FF hold_right(.clk(clk), .J(right), .K(set_reset), .Q(key_hold[2]), .not_Q(Q_out[2]));
+    JK_FF hold_down(.clk(clk), .J(down), .K(set_reset), .Q(key_hold[3]), .not_Q(Q_out[3]));
     
     initial begin
         Current_pos = 8'd45;
@@ -362,59 +352,61 @@ module OMOK(rst, clk, key_col, R, G, B, den, hsync, vsync, dclk, disp_en, key_ro
         put = 0;
         right = 0;
         down = 0;
-        set_reset = 0;
+        set_reset = 1;
     end
     
     always @(posedge clk) begin
         state_move_reg <= state_move;
-        case(state_move_reg)
-            3'd0: begin
-                    up <= 1;
-                    set_reset <= 1'b0;
-                  end
-            3'd1: begin
-                    left <= 1;
-                    set_reset <= 1'b0;
-                  end
-            3'd2: put <= 1;
-            3'd3: begin
-                    right <= 1;
-                    set_reset <= 1'b0;
-                  end
-            3'd5: begin
-                    down <= 1;
-                    set_reset <= 1'b0;
-                  end
-            3'd6: begin 
-                    up <= 0; 
-                    left <= 0; 
-                    put <= 0;
-                    right <= 0;
-                    down <= 0;
-                    set_reset <= 1'b0;
-                end
-        endcase
-        
-        if(up == 1'b1 &&  key_hold[0] == 0 && Current_pos / (map_size-1) != 0) begin
-            Current_pos <= Current_pos - 8'd10;
-        end
-        else if(left == 1'b1 &&  key_hold[1] == 0 && Current_pos % (map_size-1) != 0) begin
-            Current_pos <= Current_pos - 8'd1;
-        end
-        else if(right == 1'b1 && key_hold[2] == 0 && Current_pos % (map_size-1) != 9) begin
-            Current_pos <= Current_pos + 8'd1;
-        end
-        else if(down == 1'b1 &&  key_hold[3] == 0 && Current_pos / (map_size-1) != 9) begin
-            Current_pos <= Current_pos + 8'd10;
-        end
-        else if(rst==1) begin
+        if (rst==1'b1) begin
             Current_pos <= 8'd44;
-            up <= 0; 
-            left <= 0; 
+            up <= 0;
+            left <= 0;
             put <= 0;
             right <= 0;
             down <= 0;
             set_reset <= 1'b1;
+        end
+        else begin
+            case(state_move_reg)
+                3'd0: begin
+                        up <= 1;
+                        set_reset <= 1'b0;
+                      end
+                3'd1: begin
+                        left <= 1;
+                        set_reset <= 1'b0;
+                      end
+                3'd2: put <= 1;
+                3'd3: begin
+                        right <= 1;
+                        set_reset <= 1'b0;
+                      end
+                3'd5: begin
+                        down <= 1;
+                        set_reset <= 1'b0;
+                      end
+                3'd6: begin 
+                        up <= 0; 
+                        left <= 0; 
+                        put <= 0;
+                        right <= 0;
+                        down <= 0;
+                        set_reset <= 1'b0;
+                    end
+            endcase
+            
+            if(up == 1'b1 &&  key_hold[0] == 0 && Current_pos / (map_size-1) != 0) begin
+                Current_pos <= Current_pos - 8'd10;
+            end
+            else if(left == 1'b1 &&  key_hold[1] == 0 && Current_pos % (map_size-1) != 0) begin
+                Current_pos <= Current_pos - 8'd1;
+            end
+            else if(right == 1'b1 && key_hold[2] == 0 && Current_pos % (map_size-1) != 9) begin
+                Current_pos <= Current_pos + 8'd1;
+            end
+            else if(down == 1'b1 &&  key_hold[3] == 0 && Current_pos / (map_size-1) != 9) begin
+                Current_pos <= Current_pos + 8'd10;
+            end
         end
     end
 endmodule
