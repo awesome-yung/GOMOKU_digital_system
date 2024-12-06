@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-//module game_logic(Current_pos, clk, rst, board_state, game_over, stone_count_h, stone_count_v);
+//module game_logic(Current_pos, clk, rst, board_state, game_over, stone_count_h, stone_count_v);  // bench
 module game_logic(Current_pos, clk, rst, board_state, game_over);
     parameter map_size = 11;
     input [7:0] Current_pos;
@@ -201,7 +201,6 @@ module tft_lcd(clk, rst, board_state, R, G, B, den, hsync, vsync, dclk, disp_en)
     end
 endmodule
 
-//module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
 module wood_board(clk, Current_pos, put, rst, board_state);
     parameter map_size = 11;
     input clk;
@@ -237,7 +236,7 @@ module wood_board(clk, Current_pos, put, rst, board_state);
     
 endmodule
 
-//module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en, test_out, test_h, test_v, rst_test);
+//module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en, test_out, test_h, test_v, rst_test);  // bench
 module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en);
     parameter map_size = 11;
     input put, rst, undo, clk;
