@@ -1,3 +1,162 @@
+`timescale 1ns / 1ps
+
+//module game_logic(Current_pos, clk, rst, board_state, game_over, stone_count_h, stone_count_v);  // bench
+module game_logic(Current_pos, clk, rst, board_state, game_over);
+    parameter map_size = 11;
+    input [7:0] Current_pos;
+    input clk, rst;
+    input [(map_size-1)*(map_size-1)*2-1:0] board_state;
+    output reg game_over;
+//    output reg [3:0] stone_count_h, stone_count_v;   // bench
+    reg [3:0] stone_count_h, stone_count_v, stone_count_d1, stone_count_d2;
+    reg [3:0] cnt_row, cur_row, cur_col, cnt_col;
+    reg [7:0] position_h, position_v;
+    integer i;
+    initial begin
+        stone_count_h = 1;
+        stone_count_v = 1;
+        stone_count_d1 = 1;
+        stone_count_d2 = 1;
+        game_over = 1'b0;
+    end
+
+    // violation_checker checker();
+
+    always @(posedge clk) begin
+        cur_row = Current_pos/10;
+        cur_col = Current_pos%10;
+        
+        if (stone_count_h==5||stone_count_v==5||stone_count_d1==5||stone_count_d2==5) game_over = 1'b1;
+        
+        for (i = 0; i < 9; i = i + 1) begin
+            // Horizontal
+            if(4<=Current_pos && Current_pos<=95) begin
+                cnt_row = (Current_pos-4+i)/10;
+                if (cnt_row==cur_row && 0<=cnt_row && cnt_row<10) begin
+                    position_h = (Current_pos - 4) + i * 1;
+                    if (board_state[position_h*2 +:2] == board_state[position_h*2 + 2 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_h = stone_count_h + 1;
+                    else stone_count_h = 'b0;
+                end
+                else stone_count_h = 'b0;            
+            end
+            
+            // Vertical
+            if(40<=Current_pos && Current_pos<=59) begin
+                cnt_col = (Current_pos-40+i*10)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 40) + i * 10;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_v = stone_count_v + 1;
+                    else stone_count_v = 'b0;
+                end
+                else stone_count_v = 'b0;            
+            end
+
+            // Diagonal(\)
+            if(44<=Current_pos && Current_pos<=55) begin
+                cnt_d1 = (Current_pos-44+i*11)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 44) + i * 11;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_d1 = stone_count_d1 + 1;
+                    else stone_count_d1 = 'b0;
+                end
+                else stone_count_d1 = 'b0;            
+            end
+
+            // Diagonal(/)
+            if(36<=Current_pos && Current_pos<=63) begin
+                cnt_col = (Current_pos-36+i*9)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 36) + i * 9;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_d2 = stone_count_d2 + 1;
+                    else stone_count_d2 = 'b0;
+                end
+                else stone_count_d2 = 'b0;            
+            end
+        end
+    end
+endmodule
+
+module violation_checker (Current_pos, clk, rst, board_state, violation_flag);
+    parameter map_size = 11;
+    input [7:0] Current_pos;
+    input clk, rst;
+    input [(map_size-1)*(map_size-1)*2-1:0] board_state;
+    output reg violation_flag;
+//    output reg [3:0] stone_count_h, stone_count_v;   // bench
+    reg [3:0] stone_count_h, stone_count_v, stone_count_d1, stone_count_d2;
+    reg [3:0] cnt_row, cur_row, cur_col, cnt_col;
+    reg [3:0] cnt_three;
+    reg [7:0] position_h, position_v;
+    integer i;
+    initial begin
+        stone_count_h = 1;
+        stone_count_v = 1;
+        stone_count_d1 = 1;
+        stone_count_d2 = 1;
+        cnt_three = 4'b0;
+        violation_flag = 1'b0;
+    end
+
+    always @(posedge clk) begin
+        cur_row = Current_pos/10;
+        cur_col = Current_pos%10;
+        
+        if (stone_count_h==3) cnt_three = cnt_three + 1;
+        else if (stone_count_v==3) cnt_three = cnt_three + 1;
+        else if (stone_count_d1==3) cnt_three = cnt_three + 1;
+        else if (stone_count_d2==3) cnt_three = cnt_three + 1;
+        
+        if (cnt_three == 2) violation_flag = 1'b1;
+
+
+        for (i = 0; i < 5; i = i + 1) begin
+            // Horizontal
+            if(2<=Current_pos && Current_pos<=97) begin
+                cnt_row = (Current_pos-2+i)/10;
+                if (cnt_row==cur_row && 0<=cnt_row && cnt_row<10) begin
+                    position_h = (Current_pos - 2) + i * 1;
+                    if (board_state[position_h*2 +:2] == board_state[position_h*2 + 2 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_h = stone_count_h + 1;
+                    else stone_count_h = 'b0;
+                end
+                else stone_count_h = 'b0;            
+            end
+            
+            // Vertical
+            if(20<=Current_pos && Current_pos<=79) begin
+                cnt_col = (Current_pos-40+i*10)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 20) + i * 10;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_v = stone_count_v + 1;
+                    else stone_count_v = 'b0;
+                end
+                else stone_count_v = 'b0;            
+            end
+
+            // Diagonal(\)
+            if(22<=Current_pos && Current_pos<=77) begin
+                cnt_d1 = (Current_pos-44+i*11)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 22) + i * 11;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_d1 = stone_count_d1 + 1;
+                    else stone_count_d1 = 'b0;
+                end
+                else stone_count_d1 = 'b0;            
+            end
+
+            // Diagonal(/)
+            if(18<=Current_pos && Current_pos<=81) begin
+                cnt_col = (Current_pos-36+i*9)%10;
+                if (cnt_col==cur_col && 0<=cnt_col && cnt_col<10) begin
+                    position_v = (Current_pos - 18) + i * 9;
+                    if (board_state[position_v*2 +:2] == board_state[position_v*2 + 20 +:2] && board_state[position_h*2 +:2]!=2'b00) stone_count_d2 = stone_count_d2 + 1;
+                    else stone_count_d2 = 'b0;
+                end
+                else stone_count_d2 = 'b0;            
+            end
+        end
+    end
+endmodule
+
 module TFT_LCD_controller(clk, rst, counter_h, counter_v, disp_den, disp_hsync, disp_vsync, disp_clk, disp_enb);
     parameter HSIZE = 11;
     parameter VSIZE = 10;
@@ -54,10 +213,10 @@ module TFT_LCD_controller(clk, rst, counter_h, counter_v, disp_den, disp_hsync, 
     end
 endmodule
 
-module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk, disp_en);
+module tft_lcd(clk, rst, board_state, R, G, B, den, hsync, vsync, dclk, disp_en);
     parameter map_size = 11;
     input clk, rst;
-    input [(map_size-1)*(map_size-1)-1:0] board_state, turn_map;
+    input [(map_size-1)*(map_size-1)*2-1:0] board_state;
     output reg [8-1:0] R, G, B;
     output den, hsync, vsync;
     output dclk, disp_en;
@@ -75,7 +234,7 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
         .disp_clk(dclk), .disp_enb(disp_en)
     );
     initial begin
-        stone_range = 320'h05080a0c0d0e0f10111212131313141414141414141414141414131313121211100f0e0d0c0a0805;
+        stone_range = 160'h05080a0c0d0e0f10111212131313141414141414;
         row_max = 20;
     end
     
@@ -102,26 +261,44 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
                 B = 8'h3F;
             end
             for (k=0;k<(map_size-1)*(map_size-1);k=k+1) begin  // display stone
-                if (board_state[k]==1'b1 && turn_map[k]==1) begin
+                if (board_state[k*2+:2]==2'b11) begin
                     row = k/(map_size-1);
                     col = k%(map_size-1);
-                    for(r=0;r<40;r=r+1) begin
-                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
-                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                    for(r=0;r<20;r=r+1) begin
+                        x_min = 410 + 40 + col*40 - stone_range[(19-r)*8+:8];
+                        x_max = 410 + 40 + col*40 + stone_range[(19-r)*8+:8];
                         if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
                             R = 8'hFF;
                             G = 8'hFF;
                             B = 8'hFF;
                         end
-                    end                            
-                end
-                else if (board_state[k]==1'b1 && turn_map[k]==0) begin
-                    row = k/(map_size-1);
-                    col = k%(map_size-1);
-                    for(r=0;r<40;r=r+1) begin
+                    end
+                    for(r=0;r<20;r=r+1) begin
                         x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
                         x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        if(counter_v == 42+40+row*40+(r) && x_min<=counter_h && counter_h<=x_max) begin
+                            R = 8'hFF;
+                            G = 8'hFF;
+                            B = 8'hFF;
+                        end
+                    end                          
+                end
+                else if (board_state[k*2+:2]==2'b10) begin
+                    row = k/(map_size-1);
+                    col = k%(map_size-1);
+                    for(r=0;r<20;r=r+1) begin
+                        x_min = 410 + 40 + col*40 - stone_range[(19-r)*8+:8];
+                        x_max = 410 + 40 + col*40 + stone_range[(19-r)*8+:8];
                         if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
+                            R <= 8'h00;
+                            G <= 8'h00;
+                            B <= 8'h00;
+                        end
+                    end
+                    for(r=0;r<20;r=r+1) begin
+                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
+                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
+                        if(counter_v == 42+40+row*40+(r) && x_min<=counter_h && counter_h<=x_max) begin
                             R <= 8'h00;
                             G <= 8'h00;
                             B <= 8'h00;
@@ -133,144 +310,77 @@ module tft_lcd(clk, rst, board_state, turn_map, R, G, B, den, hsync, vsync, dclk
     end
 endmodule
 
-module game_logic(Current_pos, rst, turn, board_state, game_over);
-    parameter map_size = 11;
-    input [7:0] Current_pos;
-    input rst;
-    input turn;
-    input [(map_size-1)*(map_size-1)-1:0] board_state;
-    output reg game_over;
-
-    reg [3:0] count_row, count_col, count_diag1, count_diag2;
-
-    task check_line_winning(
-        input [(map_size-1)*(map_size-1)-1:0] state, 
-        input integer start_pos, 
-        input integer delta, // Direction increment (e.g., +1 for horizontal, +map_size for vertical)
-        input integer turn_value,
-        output reg [3:0] count
-    );
-        integer i, current_pos;
-        begin
-            count = 0;
-            for (i = -4; i <= 4; i = i + 1) begin
-                current_pos = start_pos + i * delta;
-                // Boundary check
-                if (current_pos >= 0 && current_pos < (map_size-1)*(map_size-1)) begin
-                    if (state[current_pos] == turn_value) count = count + 1;
-                    else count = 0;
-                    // Winning condition
-                    if (count == 5) begin
-                        game_over = 1'b1;
-                        disable check_line_winning; // Exit task on win
-                    end
-                end
-            end
-        end
-    endtask
-
-    always @(*) begin
-        game_over = 1'b0; // Reset game over flag
-
-        // Check for horizontal, vertical, and diagonal wins
-        check_line_winning(board_state, Current_pos, 1, turn, count_row); // Horizontal
-        check_line_winning(board_state, Current_pos, map_size - 1, turn, count_col); // Vertical
-        check_line_winning(board_state, Current_pos, map_size, turn, count_diag1); // Diagonal (\)
-        check_line_winning(board_state, Current_pos, map_size - 2, turn, count_diag2); // Diagonal (/)
-    end
-endmodule
-
-module wood_board(clk, Current_pos, put, rst, board_state, turn_map);
+module wood_board(clk, Current_pos, put, rst, board_state);
     parameter map_size = 11;
     input clk;
     input [7:0] Current_pos;
-    input put, rst;
-    reg put_prev;
+    input put,rst;
     reg [7:0] turn;
-    reg [(map_size-1)*(map_size-1)-1:0] pos_bit;
-    reg [(map_size-1)*(map_size-1)-1:0] board_state_mem;
-    reg [(map_size-1)*(map_size-1)-1:0] turn_map_mem;
-    reg game_over;
-
-    output [(map_size-1)*(map_size-1)-1:0] board_state;
-    output [(map_size-1)*(map_size-1)-1:0] turn_map;
-
+    reg [(map_size-1)*(map_size-1)*2-1:0] board_state_mem;
+    wire game_over;
+    output [(map_size-1)*(map_size-1)*2-1:0] board_state;
+    
     assign board_state = board_state_mem;
-    assign turn_map = turn_map_mem;
-
-    game_logic logic(
-    .Current_pos(Current_pos), 
-    .rst(rst), 
-    .turn(turn % 2), 
-    .board_state(board_state_mem), 
-    .game_over(game_over)
-    );
-
+    
     initial begin
-        board_state_mem = 'b0;
-        game_over = 1'b0;
-        turn_map_mem = 'b0;
-        turn = 0;
+        board_state_mem <= 'b0;
+        turn <= 0;
     end
 
-    always @(posedge clk) begin
-        put_prev <= put;
-    end
-
-    always @(posedge clk) begin
-        pos_bit = 100'b0;
-        if(put==1'b1 && put_prev==1'b0 && board_state_mem[Current_pos]==1'b0) begin
-            pos_bit[Current_pos] = 1'b1;
-            turn = turn + 1;
+    always @(posedge clk)begin
+        if(put==1'b1 && board_state_mem[Current_pos*2 +:2]==2'b00) begin
+            turn <= turn + 1;
             if (turn%2==8'b0)begin
-                turn_map_mem[Current_pos] <= 1;
+                board_state_mem[Current_pos*2 +:2] <= 2'b11; // white stone
             end
             else begin
-                turn_map_mem[Current_pos] <= 0;
+                board_state_mem[Current_pos*2 +:2] <= 2'b10; // black stone
             end
         end
-
-        if (game_over == 1) begin
+        if(rst==1 | game_over)begin
             board_state_mem <= 'b0;
-            turn_map_mem <= 'b0;
-            turn = 0;
-        end
-
-        board_state_mem <= board_state_mem | pos_bit;
-        
-        if(rst==1)begin
-            board_state_mem <= 'b0;
-            turn_map_mem <= 'b0;
-            turn = 0;
+            turn <= 0;
         end
     end
-
 endmodule
 
+//module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en, test_out, test_h, test_v, rst_test);  // bench
 module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsync, dclk, disp_en);
     parameter map_size = 11;
     input put, rst, undo, clk;
     input left, right, up, down;
     output [8-1:0] R, G, B;
     output den, hsync, vsync, dclk, disp_en;
+//    output [(map_size-1)*(map_size-1)*2-1:0] test_out;   // bench
+//    output [3:0] test_h, test_v;                         // bench   
+//    output [2:0] rst_test;                               // bench
     reg [7:0] Current_pos;
     reg right_prev, left_prev, up_prev, down_prev;
-    wire [(map_size-1)*(map_size-1)-1:0] board_state;
-    wire [(map_size-1)*(map_size-1)-1:0] turn_map;
+    wire order_rst;
+    wire [(map_size-1)*(map_size-1)*2-1:0] board_state;
+    wire game_over;
+
+    wood_board board(.clk(clk), .Current_pos(Current_pos), .put(put), .rst(order_rst), .board_state(board_state));
+    tft_lcd lcd(.clk(clk), .rst(order_rst), .board_state(board_state), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
+    game_logic logic(.clk(clk), .Current_pos(Current_pos), .rst(order_rst), .board_state(board_state), .game_over(game_over));
+//    game_logic logic(.clk(clk), .Current_pos(Current_pos), .rst(order_rst), .board_state(board_state), .game_over(game_over), .stone_count_h(test_h), .stone_count_v(test_v));  // bench 
     
-    wood_board board(.clk(clk), .Current_pos(Current_pos), .put(put), .rst(rst), .board_state(board_state), .turn_map(turn_map));
-    tft_lcd lcd(.clk(clk), .rst(rst), .board_state(board_state), .turn_map(turn_map), .R(R), .G(G), .B(B), .den(den), .hsync(hsync), .vsync(vsync),.dclk(dclk), .disp_en(disp_en));
+    assign order_rst = rst||game_over;   
+//    assign rst_test = {rst, order_rst, game_over};      // bench                 
+//    assign test_out = board_state;                     // bench 
     
     initial begin
         Current_pos = 8'd44;
     end
     
-    always @(posedge clk or posedge rst) begin
-        if (rst) begin
+    always @(posedge clk) begin
+        if (order_rst) begin
             right_prev <= 1'b0;
             left_prev <= 1'b0;
             up_prev <= 1'b0;
             down_prev <= 1'b0;
+            Current_pos <= 8'd44;
+            
         end
         else begin
             right_prev <= right;
@@ -293,8 +403,8 @@ module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsy
         else if(down == 1'b1 && down_prev == 1'b0 && Current_pos / (map_size-1) != 9) begin
             Current_pos = Current_pos + 8'd10;
         end
-        else if(rst==1) begin
-            Current_pos = 8'd44;
-        end
+//        else if(order_rst==1) begin
+//            Current_pos = 8'd44;
+//        end
     end
 endmodule
