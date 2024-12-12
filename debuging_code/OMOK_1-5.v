@@ -67,7 +67,7 @@ module tft_lcd(clk, rst, board_state, Current_pos, R, G, B, den, hsync, vsync, d
     wire [11-1:0] counter_h;
     wire [10-1:0] counter_v;
     reg [9:0] row, col, x_min, x_max, row_max;
-    reg [8*20*2-1:0] stone_range;
+    reg [8*20-1:0] stone_range;
     integer k;
     integer r;
 
@@ -183,6 +183,7 @@ module wood_board(clk, Current_pos, put, rst, board_state);
     input put,rst;
     reg [7:0] turn;
     reg [(map_size-1)*(map_size-1)*2-1:0] board_state_mem;
+    reg put_prev;
     output [(map_size-1)*(map_size-1)*2-1:0] board_state;
 
     assign board_state = board_state_mem;
@@ -191,9 +192,13 @@ module wood_board(clk, Current_pos, put, rst, board_state);
         board_state_mem = 'b0;
         turn = 0;
     end
+    
+    always @(posedge clk) begin
+            put_prev <= put;
+    end
 
     always @(posedge clk)begin
-        if(put==1'b1 && board_state_mem[Current_pos*2 +:2]==2'b00) begin
+        if(put==1'b1 && put_prev==1'b0 && board_state_mem[Current_pos*2 +:2]==2'b00) begin
             turn = turn + 1;
             if (turn%2==8'b0)begin
                 board_state_mem[Current_pos*2 +:2] <= 2'b11; // white stone
@@ -234,7 +239,6 @@ module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsy
             left_prev <= 1'b0;
             up_prev <= 1'b0;
             down_prev <= 1'b0;
-            Current_pos <= 8'd45;
         end
         else begin
             right_prev <= right;
@@ -256,6 +260,9 @@ module OMOK(left, right, up, down, put, rst, undo, clk, R, G, B, den, hsync, vsy
         end
         else if(down == 1'b1 && down_prev == 1'b0 && Current_pos / (map_size-1) != 9) begin
             Current_pos = Current_pos + 8'd10;
+        end
+        else if(rst==1) begin
+            Current_pos = 8'd44;
         end
     end
 endmodule
