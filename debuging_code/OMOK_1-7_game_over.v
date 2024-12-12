@@ -244,24 +244,15 @@ module tft_lcd(clk, rst, board_state, Current_pos, R, G, B, den, hsync, vsync, d
                 if (Current_pos == k) begin
                     row = k/(map_size-1);
                     col = k%(map_size-1);
-                    for(r=0;r<20;r=r+1) begin
-                        x_min = 410 + 40 + col*40 - stone_range[(19-r)*8+:8];
-                        x_max = 410 + 40 + col*40 + stone_range[(19-r)*8+:8];
-                        if(counter_v == 42+40+row*40+(r-20) && x_min<=counter_h && counter_h<=x_max) begin
+                    for(r=0;r<20;r=r+1)begin
+                        x_min = 410 + 40 + col*40 - 10;
+                        x_max = 410 + 40 + col*40 + 10;
+                        if(counter_v == 42+40+row*40+(r-10) && x_min<=counter_h && counter_h<=x_max) begin
                             R = 8'h00;
                             G = 8'h00;
                             B = 8'hFF;
                         end
-                    end
-                    for(r=0;r<20;r=r+1) begin
-                        x_min = 410 + 40 + col*40 - stone_range[r*8+:8];
-                        x_max = 410 + 40 + col*40 + stone_range[r*8+:8];
-                        if(counter_v == 42+40+row*40+(r) && x_min<=counter_h && counter_h<=x_max) begin
-                            R = 8'h00;
-                            G = 8'h00;
-                            B = 8'hFF;
-                        end
-                    end                          
+                    end                    
                 end
                 else if (board_state[k*2+:2]==2'b11) begin
                     row = k/(map_size-1);
