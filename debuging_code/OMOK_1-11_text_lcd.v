@@ -85,13 +85,13 @@ module violation_checker(clk, rst, Current_pos, turn, board_state, violation_fla
                 else begin
                     r_d = 0;
                 end
-                if(left_up==6'b101000)begin    // black
+                if(left_up==6'b001010)begin    // black
                     l_u = 1;
                 end
                 else begin
                     l_u = 0;
                 end
-                if(left_down==6'b101000)begin    // black
+                if(left_down==6'b001010)begin    // black
                     l_d = 1;
                 end
                 else begin
@@ -137,13 +137,13 @@ module violation_checker(clk, rst, Current_pos, turn, board_state, violation_fla
                 else begin
                     r_d = 0;
                 end
-                if(left_up==6'b111100)begin    // black
+                if(left_up==6'b001111)begin    // black
                     l_u = 1;
                 end
                 else begin
                     l_u = 0;
                 end
-                if(left_down==6'b111100)begin    // black
+                if(left_down==6'b001111)begin    // black
                     l_d = 1;
                 end
                 else begin
