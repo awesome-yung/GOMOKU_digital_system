@@ -125,25 +125,25 @@ module violation_checker(clk, rst, Current_pos, turn, board_state, violation_fla
                     d = 0;
                 end
                 
-                if(right_up==6'b111100)begin    // white
+                if(right_up==6'b111100)begin    // black
                     r_u = 1;
                 end
                 else begin
                     r_u = 0;
                 end
-                if(right_down==6'b111100)begin    // white
+                if(right_down==6'b111100)begin    // black
                     r_d = 1;
                 end
                 else begin
                     r_d = 0;
                 end
-                if(left_up==6'b111100)begin    // white
+                if(left_up==6'b111100)begin    // black
                     l_u = 1;
                 end
                 else begin
                     l_u = 0;
                 end
-                if(left_down==6'b111100)begin    // white
+                if(left_down==6'b111100)begin    // black
                     l_d = 1;
                 end
                 else begin
@@ -155,8 +155,8 @@ module violation_checker(clk, rst, Current_pos, turn, board_state, violation_fla
     end
     
     always @(posedge clk) begin
-        cnt = l+r+u+d;
-        if(cnt==2'd2 && l+r!=2'd2 && u+d!=2'd2) begin
+        cnt = l+r+u+d+r_u+r_d+l_u+l_d;
+        if(cnt==2'd2 && l+r!=2'd2 && u+d!=2'd2 && l_u+r_d !=2 && r_u+l_d!=2) begin
             violation_flag = 1;
         end
         else begin
