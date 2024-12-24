@@ -1,15 +1,14 @@
 # OMOK_digital_system
 
-
-https://github.com/user-attachments/assets/eb79966b-6c0e-4968-b7d6-1521424b3b03
+![implementation-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/cfba2c86-ad1f-4a5d-9fdf-fc90fde02073)
 
 ## Game objective
 The goal of Gomoku is for a player to form an unbroken line of five stones either horizontally, vertically, or diagonally.
 
-https://github.com/user-attachments/assets/367ff6a2-bd6d-4062-8f9c-d148aea19074
+![flow chart](https://github.com/user-attachments/assets/b237dd9c-8f33-46ee-b370-f36ee9f81e0c)
 
 ## violation rule ( 3x3 )
-https://github.com/user-attachments/assets/0861155f-9dc1-4d74-be76-17eb7bf9613b
+![violation](https://github.com/user-attachments/assets/e90cdce6-3e91-4ae5-9b6c-8d4d3e7417a2)
 
-
-https://github.com/user-attachments/assets/0861155f-9dc1-4d74-be76-17eb7bf9613b
+## pin mapping
+![pin_mapping](https://github.com/user-attachments/assets/374d4725-a479-44fd-a5b3-bc8cd44ad078)
